@@ -1,0 +1,6 @@
+create /uploads inside of /var/www/html and then inside of /uploads create new folders for all the boards
+to reset the site use   sudo rm -rf /var/www/html/uploads/*
+and
+for dir in tech general random hacking markets; do   sudo mkdir -p /var/www/html/uploads/$dir;   sudo touch /var/www/html/uploads/$dir/posts.json;   sudo chmod -R 777 /var/www/html/uploads/$dir; done
+
+and also if updating index.php use  sudo chown -R www-data:www-data /var/www/html to allow posts 

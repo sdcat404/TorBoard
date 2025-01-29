@@ -8,6 +8,8 @@ $boards = [
     'random' => 'Random',
     'hacking' => 'Hacking',
     'markets' => 'Markets',
+    'mental health' => 'Mental Health',
+    '/rules' => 'Rules',
 ];
 
 // Determine the current board
@@ -143,7 +145,7 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
         <input type="file" name="image">
         <button type="submit">Post</button>
     </form>
-    
+
     <?php foreach (array_reverse($posts) as $post): ?>
         <div class="post">
             <strong><?= $post['name'] ?></strong><br>

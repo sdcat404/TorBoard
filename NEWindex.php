@@ -85,6 +85,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment'])) {
 
     foreach ($posts as &$post) {
         if ($post['id'] === $postId) {
+            if (!isset($post['comments'])) {
+                $post['comments'] = []; // Ensure comments array exists
+            }
             $post['comments'][] = [
                 'name' => $commentName,
                 'comment' => $comment,
@@ -133,22 +136,38 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
     </nav>
 </header>
 <main>
-    <h2>Board: <?= $boards[$currentBoard] ?></h2>
+<h2>Board: <?= $boards[$currentBoard] ?></h2>
     <form action="" method="post" enctype="multipart/form-data">
         <input type="text" name="name" placeholder="Name (optional)">
         <textarea name="message" placeholder="Write your message..." required></textarea>
         <input type="file" name="image">
         <button type="submit">Post</button>
     </form>
-
+    
     <?php foreach (array_reverse($posts) as $post): ?>
         <div class="post">
             <strong><?= $post['name'] ?></strong><br>
             <p><?= nl2br($post['message']) ?></p>
             <?php if (!empty($post['image'])): ?>
-                <img src="<?= $post['image'] ?>" alt="Uploaded Image">
+                <img src="/<?= $post['image'] ?>" alt="Uploaded Image">
             <?php endif; ?>
             <br><small><?= $post['timestamp'] ?></small>
+
+            <?php if (!empty($post['comments'])): ?>
+                <?php foreach ($post['comments'] as $comment): ?>
+                    <div class="comment">
+                        <strong><?= $comment['name'] ?></strong>: <?= nl2br($comment['comment']) ?><br>
+                        <small><?= $comment['timestamp'] ?></small>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <form class="comment-form" action="" method="post">
+                <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+                <input type="text" name="comment_name" placeholder="Name (optional)">
+                <input type="text" name="comment" placeholder="Add a comment..." required>
+                <button type="submit">Comment</button>
+            </form>
         </div>
     <?php endforeach; ?>
 </main>

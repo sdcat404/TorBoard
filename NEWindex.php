@@ -262,52 +262,63 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
          <button type="submit">Post</button>
     </form>
 
-    <?php foreach (array_reverse($posts) as $post): ?>
-        <div class="post">
-            <strong><?= 'Anonymous' ?></strong><br>
-            <p><?= nl2br($post['message']) ?></p>
-            <?php if (!empty($post['image'])): ?>
-                <img src="/<?= $post['image'] ?>" alt="Uploaded Image">
-            <?php endif; ?>
-            <br><small><?= $post['timestamp'] ?></small>
-<br>
-            <br><strong>Score: <?= $post['score'] ?? 0 ?></strong>
+<?php foreach (array_reverse($posts) as $post): ?>
+    <div class="post">
+        <strong><?= 'Anonymous' ?></strong><br>
+        <p><?= nl2br($post['message']) ?></p>
+        <?php if (!empty($post['image'])): ?>
+            <img src="/<?= $post['image'] ?>" alt="Uploaded Image">
+        <?php endif; ?>
+        <br><small><?= $post['timestamp'] ?></small>
+        <br>
+        <br><strong>Score: <?= $post['score'] ?? 0 ?></strong>
 
         <!-- Upvote & Downvote Buttons -->
-<form action="" method="post" style="display:inline;">
-    <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-    <input type="hidden" name="vote" value="up">
-    <button type="submit" class="vote-button">👍</button>
-</form>
+        <form action="" method="post" style="display:inline;">
+            <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+            <input type="hidden" name="vote" value="up">
+            <button type="submit" class="vote-button">👍</button>
+        </form>
 
-<form action="" method="post" style="display:inline;">
-    <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-    <input type="hidden" name="vote" value="down">
-    <button type="submit" class="vote-button">👎</button>
+        <form action="" method="post" style="display:inline;">
+            <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+            <input type="hidden" name="vote" value="down">
+            <button type="submit" class="vote-button">👎</button>
+        </form>
 
-</form>
+        <br>
 
-<br>
+        <?php
+        $totalComments = count($post['comments']);
+        if ($totalComments > 0) {
+            echo "<h4>Latest Comments:</h4>";
+            $displayedComments = array_slice($post['comments'], -5);
+        }
+        ?>
 
+        <!-- Show only the last 5 comments -->
+        <?php foreach ($displayedComments as $comment): ?>
+            <div class="comment">
+                <strong><?= $comment['name'] ?></strong>: <?= nl2br($comment['comment']) ?><br>
+                <small><?= $comment['timestamp'] ?></small>
+            </div>
+        <?php endforeach; ?>
 
-            <?php if (!empty($post['comments'])): ?>
-                <?php foreach ($post['comments'] as $comment): ?>
-<br>
-                    <div class="comment">
-                        <strong><?= $comment['name'] ?></strong>: <?= nl2br($comment['comment']) ?><br>
-                        <small><?= $comment['timestamp'] ?></small>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
+        <!-- Show "View All Comments" if there are more than 5 -->
+        <?php if ($totalComments > 5): ?>
+            <a href="thread.php?id=<?= $post['id'] ?>&board=<?= $currentBoard ?>" class="view-thread-button">View All Comments (<?= $totalComments ?>)</a>
+        <?php else: ?>
+            <a href="thread.php?id=<?= $post['id'] ?>&board=<?= $currentBoard ?>" class="view-thread-button">View Thread</a>
+        <?php endif; ?>
 
-            <form class="comment-form" action="" method="post">
-               <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-
-               <input type="text" name="comment" placeholder="Add a comment..." required>
-               <button type="submit">Comment</button>
-            </form>
-        </div>
-    <?php endforeach; ?>
+        <!-- Comment Form -->
+        <form class="comment-form" action="" method="post">
+            <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+            <input type="text" name="comment" placeholder="Add a comment..." required>
+            <button type="submit">Comment</button>
+        </form>
+    </div>
+<?php endforeach; ?>
 </main>
 </body>
 </html>

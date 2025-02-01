@@ -135,27 +135,52 @@ if (empty($message)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment'])) {
     $postId = $_POST['post_id'];
     $commentName = htmlspecialchars($_POST['comment_name'] ?? 'Anonymous');
-    $comment = htmlspecialchars($_POST['comment']);
+    $commentText = htmlspecialchars($_POST['comment']);
 
-    $userId = $_SESSION['user_id'];
+    // Prevent blank comments
+    if (empty($commentText)) {
+        die("Error: You must enter text in the comment field.");
+    }
+
     $postsFile = $uploadDir . 'posts.json';
-    $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), true) : [];
 
+    // Check if the posts file exists and is valid JSON
+    if (file_exists($postsFile)) {
+        $jsonContent = file_get_contents($postsFile);
+        $posts = json_decode($jsonContent, true);
+
+        // If JSON is corrupted, reset to an empty array
+        if (!is_array($posts)) {
+            $posts = [];
+        }
+    } else {
+        $posts = [];
+    }
+
+    // Flag to check if the post was found and updated
+    $postUpdated = false;
+
+    // Update only the correct post
     foreach ($posts as &$post) {
         if ($post['id'] === $postId) {
             if (!isset($post['comments'])) {
-                $post['comments'] = []; // Ensure comments array exists
+                $post['comments'] = [];
             }
             $post['comments'][] = [
                 'name' => $commentName,
-                'comment' => $comment,
+                'comment' => $commentText,
                 'timestamp' => date('Y-m-d H:i:s')
             ];
-            break;
+            $postUpdated = true;
+            break; // Stop loop after updating the correct post
         }
     }
 
-    file_put_contents($postsFile, json_encode($posts));
+    // Save the updated posts if the target post was found
+    if ($postUpdated) {
+        file_put_contents($postsFile, json_encode($posts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    }
+
     header("Location: ?board=$currentBoard");
     exit;
 }
@@ -239,6 +264,35 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
     transform: scale(0.95); /* Shrinks slightly when clicked */
 }
 
+footer {
+    background: #111; /* Dark background */
+    color: #ddd;
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 14px;
+    border-top: 1px solid #333;
+}
+
+footer a {
+    color: #ff8800; /* Highlighted color for links */
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+.xmr-address {
+    font-family: monospace;
+    background: #222;
+    padding: 5px;
+    border-radius: 3px;
+    display: inline-block;
+    word-break: break-all;
+}
+
+
     </style>
 </head>
 <body>
@@ -288,23 +342,24 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
 
         <br>
 
+        <!-- Show Only Latest 5 Comments -->
         <?php
         $totalComments = count($post['comments']);
         if ($totalComments > 0) {
             echo "<h4>Latest Comments:</h4>";
             $displayedComments = array_slice($post['comments'], -5);
+
         }
         ?>
 
-        <!-- Show only the last 5 comments -->
         <?php foreach ($displayedComments as $comment): ?>
             <div class="comment">
-                <strong><?= $comment['name'] ?></strong>: <?= nl2br($comment['comment']) ?><br>
+               <strong><?= 'Anonymous:' ?></strong> <?= nl2br($comment['comment']) ?><br>
                 <small><?= $comment['timestamp'] ?></small>
             </div>
         <?php endforeach; ?>
 
-        <!-- Show "View All Comments" if there are more than 5 -->
+        <!-- Show "View Thread" if More Than 5 Comments -->
         <?php if ($totalComments > 5): ?>
             <a href="thread.php?id=<?= $post['id'] ?>&board=<?= $currentBoard ?>" class="view-thread-button">View All Comments (<?= $totalComments ?>)</a>
         <?php else: ?>
@@ -320,5 +375,11 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
     </div>
 <?php endforeach; ?>
 </main>
+<footer>
+    <p>Support TorBoard: Donate XMR</p>
+    <p>Monero Wallet: <span class="xmr-address">48v8nM1t6eLEiWjjMy5jidNRtbGufTU8pFtoEM6eCgw63kjAL1cYiuea5QirEbLZrEUc54PNEMetRJeCznWVfSXVLwz5LTy</span></p>
+    <p>Join the discussion on <a href="http://dreadytofatroptsdj6io7l3xptbet6onoyno2yv7jicoxknyazubrad.onion/d/TorBoard" target="_blank">Dread (/d/TorBoard)</a></p>
+</footer>
+
 </body>
 </html>

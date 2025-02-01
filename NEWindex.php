@@ -1,5 +1,10 @@
 <?php
 session_start();
+if (!isset($_SESSION['captcha_question'])) {
+    $_SESSION['captcha_num1'] = rand(1, 10);
+    $_SESSION['captcha_num2'] = rand(1, 10);
+    $_SESSION['captcha_question'] = $_SESSION['captcha_num1'] . " + " . $_SESSION['captcha_num2'];
+}
 
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = uniqid();
@@ -60,11 +65,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vote']) && isset($_PO
 }
 
 
+
 // Handle form submission for posts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
     $commentName = htmlspecialchars($_POST['comment_name'] ?? 'Anonymous');
     $message = htmlspecialchars($_POST['message'] ?? '');
     $image = '';
+ if (!isset($_POST['captcha']) || $_POST['captcha'] != ($_SESSION['captcha_num1'] + $_SESSION['captcha_num2'])) {
+        die("❌ Error: Wrong CAPTCHA answer. Try again.");
+    }
+
+    // Reset CAPTCHA for the next post
+    $_SESSION['captcha_num1'] = rand(1, 10);
+    $_SESSION['captcha_num2'] = rand(1, 10);
+    $_SESSION['captcha_question'] = $_SESSION['captcha_num1'] . " + " . $_SESSION['captcha_num2'];
 if (empty($message)) {
     die("Error: You must enter text in the message field.");
 }
@@ -180,16 +194,49 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
     width: 40px;
     text-align: center;
 }
-
-/* Hover effect for better visibility */
-.vote-button:hover {
-    color: #aaa; /* Slight color change on hover */
+.reply-button {
+    background: #5a5a5a; /* Dark Grey Background */
+    color: #fff; /* White Text */
+    border: 2px solid #777; /* Slight Border */
+    padding: 8px 15px; /* Comfortable Padding */
+    margin: 5px 0;
+    cursor: pointer;
+    border-radius: 5px; /* Rounded Edges */
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
 }
 
-/* Remove focus outline */
-.vote-button:focus {
-    outline: none;
-    box-shadow: none;
+.reply-button:hover {
+    background: #777; /* Lighter grey on hover */
+    border-color: #aaa;
+    transform: scale(1.05); /* Slightly enlarges when hovered */
+}
+
+.reply-button:active {
+    transform: scale(0.95); /* Shrinks slightly when clicked */
+}
+.view-thread-button {
+    display: inline-block;
+    background: #444; /* Dark Grey Background */
+    color: #fff; /* White Text */
+    border: 2px solid #777; /* Slight Border */
+    padding: 6px 12px; /* Comfortable Padding */
+    margin: 5px 0;
+    cursor: pointer;
+    border-radius: 5px; /* Rounded Edges */
+    font-size: 14px;
+    text-decoration: none; /* Remove default underline */
+    transition: all 0.2s ease-in-out;
+}
+
+.view-thread-button:hover {
+    background: #777; /* Lighter grey on hover */
+    border-color: #aaa;
+    transform: scale(1.05); /* Slightly enlarges when hovered */
+}
+
+.view-thread-button:active {
+    transform: scale(0.95); /* Shrinks slightly when clicked */
 }
 
     </style>
@@ -209,7 +256,10 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
 
         <textarea name="message" placeholder="Write your message..." required></textarea>
         <input type="file" name="image">
-        <button type="submit">Post</button>
+        <!-- CAPTCHA Field -->
+    <label>What is <?= $_SESSION['captcha_question'] ?>?</label>
+    <input type="number" name="captcha" required>
+         <button type="submit">Post</button>
     </form>
 
     <?php foreach (array_reverse($posts) as $post): ?>
@@ -251,10 +301,10 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
             <?php endif; ?>
 
             <form class="comment-form" action="" method="post">
-                <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+               <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
 
-                <input type="text" name="comment" placeholder="Add a comment..." required>
-                <button type="submit">Comment</button>
+               <input type="text" name="comment" placeholder="Add a comment..." required>
+               <button type="submit">Comment</button>
             </form>
         </div>
     <?php endforeach; ?>

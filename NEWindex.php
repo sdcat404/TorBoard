@@ -29,7 +29,7 @@ if (!is_dir($uploadDir)) {
 
 // Handle form submission for posts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
-    //$name = htmlspecialchars($_POST['name'] ?? 'Anonymous');
+    $commentName = htmlspecialchars($_POST['comment_name'] ?? 'Anonymous');
     $message = htmlspecialchars($_POST['message'] ?? '');
     $image = '';
 if (empty($message)) {
@@ -157,7 +157,7 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
 
     <?php foreach (array_reverse($posts) as $post): ?>
         <div class="post">
-            <strong><?= $post['Name'] ?></strong><br>
+            <strong><?= 'Anonymous' ?></strong><br>
             <p><?= nl2br($post['message']) ?></p>
             <?php if (!empty($post['image'])): ?>
                 <img src="/<?= $post['image'] ?>" alt="Uploaded Image">

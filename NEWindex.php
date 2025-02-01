@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = uniqid();
+}
 // List of boards
 $boards = [
     'tech' => 'Technology',
@@ -26,9 +29,14 @@ if (!is_dir($uploadDir)) {
 
 // Handle form submission for posts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
-    $name = htmlspecialchars($_POST['name'] ?? 'Anonymous');
+    //$name = htmlspecialchars($_POST['name'] ?? 'Anonymous');
     $message = htmlspecialchars($_POST['message'] ?? '');
     $image = '';
+if (empty($message)) {
+    die("Error: You must enter text in the message field.");
+}
+    $image = '';
+    $userId = $_SESSION['user_id'];
 
     // Secure file upload handling
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
@@ -82,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['comment'])) {
     $commentName = htmlspecialchars($_POST['comment_name'] ?? 'Anonymous');
     $comment = htmlspecialchars($_POST['comment']);
 
+    $userId = $_SESSION['user_id'];
     $postsFile = $uploadDir . 'posts.json';
     $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), true) : [];
 
@@ -140,7 +149,7 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
 <main>
 <h2>Board: <?= $boards[$currentBoard] ?></h2>
     <form action="" method="post" enctype="multipart/form-data">
-        <input type="text" name="name" placeholder="Name (optional)">
+
         <textarea name="message" placeholder="Write your message..." required></textarea>
         <input type="file" name="image">
         <button type="submit">Post</button>
@@ -148,7 +157,7 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
 
     <?php foreach (array_reverse($posts) as $post): ?>
         <div class="post">
-            <strong><?= $post['name'] ?></strong><br>
+            <strong><?= $post['Name'] ?></strong><br>
             <p><?= nl2br($post['message']) ?></p>
             <?php if (!empty($post['image'])): ?>
                 <img src="/<?= $post['image'] ?>" alt="Uploaded Image">
@@ -166,7 +175,7 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
 
             <form class="comment-form" action="" method="post">
                 <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-                <input type="text" name="comment_name" placeholder="Name (optional)">
+
                 <input type="text" name="comment" placeholder="Add a comment..." required>
                 <button type="submit">Comment</button>
             </form>

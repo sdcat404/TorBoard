@@ -27,6 +27,39 @@ if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0777, true);
 }
 
+// Handle voting (Upvote or Downvote)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['vote']) && isset($_POST['post_id'])) {
+    $postId = $_POST['post_id'];
+    $voteType = $_POST['vote']; // 'up' or 'down'
+
+    $postsFile = $uploadDir . 'posts.json';
+    $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), true) : [];
+
+    foreach ($posts as &$post) {
+        if ($post['id'] === $postId) {
+            // Initialize score if not set
+            if (!isset($post['score'])) {
+                $post['score'] = 0;
+            }
+            // Apply vote
+            if ($voteType === 'up') {
+                $post['score']++;
+            } elseif ($voteType === 'down') {
+                $post['score']--;
+            }
+            break;
+        }
+    }
+
+    // Save updated votes
+    file_put_contents($postsFile, json_encode($posts));
+
+    // Redirect back to board
+    header("Location: ?board=$currentBoard");
+    exit;
+}
+
+
 // Handle form submission for posts
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['message'])) {
     $commentName = htmlspecialchars($_POST['comment_name'] ?? 'Anonymous');
@@ -135,6 +168,30 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
         img { max-width: 100%; height: auto; margin-top: 10px; }
         .comment { margin-left: 20px; font-size: 0.9em; color: #bbb; background: #333; padding: 5px; border-radius: 5px; }
         .comment-form { margin-top: 10px; }
+/* Target only vote buttons without affecting comments */
+.vote-button {
+    background: none !important; /* Remove background */
+    color: #fff; /* Keep text visible */
+    border: none; /* Remove borders */
+    padding: 3px 6px;
+    margin: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    width: 40px;
+    text-align: center;
+}
+
+/* Hover effect for better visibility */
+.vote-button:hover {
+    color: #aaa; /* Slight color change on hover */
+}
+
+/* Remove focus outline */
+.vote-button:focus {
+    outline: none;
+    box-shadow: none;
+}
+
     </style>
 </head>
 <body>
@@ -163,9 +220,29 @@ $posts = file_exists($postsFile) ? json_decode(file_get_contents($postsFile), tr
                 <img src="/<?= $post['image'] ?>" alt="Uploaded Image">
             <?php endif; ?>
             <br><small><?= $post['timestamp'] ?></small>
+<br>
+            <br><strong>Score: <?= $post['score'] ?? 0 ?></strong>
+
+        <!-- Upvote & Downvote Buttons -->
+<form action="" method="post" style="display:inline;">
+    <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+    <input type="hidden" name="vote" value="up">
+    <button type="submit" class="vote-button">👍</button>
+</form>
+
+<form action="" method="post" style="display:inline;">
+    <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+    <input type="hidden" name="vote" value="down">
+    <button type="submit" class="vote-button">👎</button>
+
+</form>
+
+<br>
+
 
             <?php if (!empty($post['comments'])): ?>
                 <?php foreach ($post['comments'] as $comment): ?>
+<br>
                     <div class="comment">
                         <strong><?= $comment['name'] ?></strong>: <?= nl2br($comment['comment']) ?><br>
                         <small><?= $comment['timestamp'] ?></small>
